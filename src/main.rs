@@ -3,11 +3,11 @@
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate rocket_contrib;
 #[macro_use] extern crate serde_derive;
-#[macro_use] extern crate chrono;
-#[macro_use(bson, doc)] extern crate bson;
+#[macro_use(bson)] extern crate bson;
+
+extern crate chrono;
 
 use rocket::Request;
-use rocket_contrib::json::{Json, JsonValue};
 
 mod lib;
 mod meta;
@@ -22,7 +22,8 @@ fn index() -> &'static str {
 fn main() {
     rocket::ignite().mount("/", routes![
         controllers::user::get, controllers::user::getAll, controllers::user::insert,
-        controllers::tweet::get, controllers::tweet::getAll, controllers::tweet::insert, controllers::tweet::getAllFromUser
+        controllers::tweet::get, controllers::tweet::getAll, controllers::tweet::insert,
+        controllers::tweet::getAllFromUser, controllers::tweet::like
     ])
     .register(catchers![controllers::not_found::lookup])
     .launch();

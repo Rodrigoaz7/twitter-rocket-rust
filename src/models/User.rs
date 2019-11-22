@@ -4,7 +4,7 @@ use bson;
 use bson::oid::ObjectId;
 use mongodb::ThreadedClient;
 use mongodb::db::ThreadedDatabase;
-use mongodb::{coll::results::DeleteResult, doc, error::Error};
+use mongodb::{doc, error::Error};
 
 use crate::lib;
 

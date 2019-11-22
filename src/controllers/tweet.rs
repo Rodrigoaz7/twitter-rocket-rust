@@ -131,3 +131,15 @@ pub fn insert(tweet: Json<meta::tweet::Post>) -> JsonValue {
   }
 
 }
+
+#[put("/tweet/like", format = "application/json", data = "<tweet>")]
+pub fn like(tweet: Json<meta::tweet::PostLike>) -> JsonValue {
+  let result = models::Tweet::like(tweet.tweet_id.to_owned(), tweet.user_id.to_owned());
+
+  json!({
+    "code": 200,
+    "success": true,
+    "data": {},
+    "error": ""
+  })
+}

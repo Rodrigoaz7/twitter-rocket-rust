@@ -4,11 +4,11 @@ use bson;
 use bson::oid::ObjectId;
 use mongodb::ThreadedClient;
 use mongodb::db::ThreadedDatabase;
-use mongodb::{coll::results::DeleteResult, coll::options::FindOptions, doc, error::Error};
-use chrono::{DateTime, Utc};
-use rocket_contrib::json::Json;
+use mongodb::{doc, error::Error};
+use mongodb;
 
 use crate::lib;
+use crate::meta;
 
 #[derive(Debug)]
 pub struct Model {
@@ -19,10 +19,11 @@ pub struct Model {
 
 impl Model {
     pub fn to_bson(&self) -> bson::ordered::OrderedDocument {
+      
       doc! { 
         "email": self.text.to_owned(),
         "user_id": ObjectId::with_string(&self.user_id).unwrap().to_owned(),
-        "date_created": self.date_created.to_owned(),
+        "date_created": self.date_created.to_owned()
       }
     }
     
@@ -87,5 +88,39 @@ pub fn findByUser(user_id: String) -> Result<Vec<bson::ordered::OrderedDocument>
             Err(err) => Err(err),
         })
         .collect::<Result<Vec<bson::ordered::OrderedDocument>, Error>>()
+
+}
+
+pub fn like(tweet_id: String, user_id: String) -> bool {
+    let client = lib::mongo::establish_connection();
+    let collection = client.db("twitter").collection("tweet");
+    let idTweet = ObjectId::with_string(&tweet_id).unwrap();
+    let idUser = ObjectId::with_string(&user_id).unwrap();
+
+    let result = collection.find_one(Some(doc! { "_id" : idTweet }), None)
+        .ok().expect("Failed to execute find.").unwrap();
+    
+    let result_formatted = bson::from_bson::<meta::tweet::GetResponseForUpdate>(bson::Bson::Document(result));
+
+    match result_formatted {
+        Ok(tweet) => {
+
+            let mut items = tweet.likes;
+            let item = items.last().cloned();
+            items.push(bson::Bson::ObjectId(ObjectId::with_string(&user_id).unwrap()));
+            
+            /*É necessário checar ainda se o usuário já curtiu o tweet*/
+            let r = collection.update_one(
+                doc! { "_id" : ObjectId::with_string(&tweet_id).unwrap() }, 
+                doc! { "$set" => {"likes" : items }},
+                None).ok().expect("Failed to execute update.");
+
+        },
+        Err(_e) => {
+            println!("Apresentei um erro: {}", _e.to_string());
+        }
+    }
+
+    true
 
 }
