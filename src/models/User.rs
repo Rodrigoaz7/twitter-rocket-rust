@@ -67,3 +67,21 @@ pub fn find() -> Result<Vec<bson::ordered::OrderedDocument>, Error> {
         .collect::<Result<Vec<bson::ordered::OrderedDocument>, Error>>()
 
 }
+
+pub fn follow(user_id: String, user_to_follow_id: String) -> bool {
+    let client = lib::mongo::establish_connection();
+    let collection = client.db("twitter").collection("usuario");
+
+    collection.update_one(
+        doc! { "_id" : ObjectId::with_string(&user_id).unwrap() }, 
+        doc! { "$addToSet" => {"following" : bson::Bson::ObjectId(ObjectId::with_string(&user_to_follow_id).unwrap()) }},
+        None).ok().expect("Failed to execute update.");
+
+    collection.update_one(
+        doc! { "_id" : ObjectId::with_string(&user_to_follow_id).unwrap() }, 
+        doc! { "$addToSet" => {"followers" : bson::Bson::ObjectId(ObjectId::with_string(&user_id).unwrap()) }},
+        None).ok().expect("Failed to execute update.");
+
+    true
+
+}

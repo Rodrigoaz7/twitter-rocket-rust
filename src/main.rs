@@ -22,8 +22,9 @@ fn index() -> &'static str {
 fn main() {
     rocket::ignite().mount("/", routes![
         controllers::user::get, controllers::user::getAll, controllers::user::insert,
+        controllers::user::follow,
         controllers::tweet::get, controllers::tweet::getAll, controllers::tweet::insert,
-        controllers::tweet::getAllFromUser, controllers::tweet::like
+        controllers::tweet::getAllFromUser, controllers::tweet::like, controllers::tweet::getAllFromUsersFollowing
     ])
     .register(catchers![controllers::not_found::lookup])
     .launch();

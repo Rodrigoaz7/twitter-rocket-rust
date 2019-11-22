@@ -7,12 +7,7 @@ use chrono::{DateTime, Utc};
 use rocket::request::{Form, LenientForm};
 use std::collections::HashMap;
 
-// #[derive(FromForm)]
-// pub struct Filtros {
-//     text: Option<String>,
-//     user_id: Option<String>
-// }
-
+// Buscar um tweet específico
 #[get("/tweet/<id>")]
 pub fn get(id: String) -> JsonValue {
 
@@ -37,7 +32,7 @@ pub fn get(id: String) -> JsonValue {
 
 }
 
-
+// Buscar todos os tweets do banco
 #[get("/tweets")]
 pub fn getAll() -> JsonValue {
 
@@ -61,10 +56,36 @@ pub fn getAll() -> JsonValue {
   }
 }
 
-#[get("/tweets/<user_id>")]
+// Buscar todos os tweets do usuário
+#[get("/tweets/profile/<user_id>")]
 pub fn getAllFromUser(user_id: String) -> JsonValue {
 
     match models::Tweet::findByUser(user_id) {
+        Ok(tweets) => {
+            json!({
+            "code": 200,
+            "success": true,
+            "data": tweets,
+            "error": ""
+            })
+        },
+        Err (_e) => {
+            json!({
+            "code": 400,
+            "success": false,
+            "data": {},
+            "error": "An error has occured"
+            })
+        }
+    }
+    
+}
+
+// Buscar todos os tweets de quem o usuário segue
+#[get("/tweets/<user_id>")]
+pub fn getAllFromUsersFollowing(user_id: String) -> JsonValue {
+
+    match models::Tweet::findFollowingsByUser(user_id) {
         Ok(tweets) => {
             json!({
             "code": 200,

@@ -88,3 +88,17 @@ pub fn insert(user: Json<meta::user::Post>) -> JsonValue {
     }
   }
 }
+
+#[put("/user/follow", format = "application/json", data = "<follow>")]
+pub fn follow(follow: Json<meta::user::FollowRequest>) -> JsonValue {
+
+  let result = models::User::follow(follow.user_id.to_owned(), follow.user_to_follow_id.to_owned());
+
+  json!({
+    "code": 200,
+    "success": true,
+    "data": {},
+    "error": ""
+  })
+
+}

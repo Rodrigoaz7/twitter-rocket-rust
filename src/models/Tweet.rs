@@ -91,35 +91,38 @@ pub fn findByUser(user_id: String) -> Result<Vec<bson::ordered::OrderedDocument>
 
 }
 
+pub fn findFollowingsByUser(user_id: String) -> Result<Vec<bson::ordered::OrderedDocument>, Error> {
+    let client = lib::mongo::establish_connection();
+    let collection = client.db("twitter").collection("tweet");
+    let collection_user = client.db("twitter").collection("usuario");
+    let id = ObjectId::with_string(&user_id).unwrap();
+
+    let user = collection_user.find_one(Some(doc! { "_id" => id }), None).unwrap();
+    let result_user = bson::from_bson::<meta::user::GetResponse>(bson::Bson::Document(user.unwrap()));
+
+    let response_document = collection.find(Some(doc! { "user_id" : {
+        "$in" : result_user.unwrap().following }}), None)
+        .ok().expect("Failed to execute find.");
+
+    response_document
+        .map(|result| match result {
+            Ok(doc) => match bson::from_bson(bson::Bson::Document(doc)) {
+                Ok(result_model) => Ok(result_model),
+                Err(_) => Err(Error::DefaultError(String::from(""))),
+            },
+            Err(err) => Err(err),
+        })
+        .collect::<Result<Vec<bson::ordered::OrderedDocument>, Error>>()
+}
+
 pub fn like(tweet_id: String, user_id: String) -> bool {
     let client = lib::mongo::establish_connection();
     let collection = client.db("twitter").collection("tweet");
-    let idTweet = ObjectId::with_string(&tweet_id).unwrap();
-    let idUser = ObjectId::with_string(&user_id).unwrap();
 
-    let result = collection.find_one(Some(doc! { "_id" : idTweet }), None)
-        .ok().expect("Failed to execute find.").unwrap();
-    
-    let result_formatted = bson::from_bson::<meta::tweet::GetResponseForUpdate>(bson::Bson::Document(result));
-
-    match result_formatted {
-        Ok(tweet) => {
-
-            let mut items = tweet.likes;
-            let item = items.last().cloned();
-            items.push(bson::Bson::ObjectId(ObjectId::with_string(&user_id).unwrap()));
-            
-            /*É necessário checar ainda se o usuário já curtiu o tweet*/
-            let r = collection.update_one(
-                doc! { "_id" : ObjectId::with_string(&tweet_id).unwrap() }, 
-                doc! { "$set" => {"likes" : items }},
-                None).ok().expect("Failed to execute update.");
-
-        },
-        Err(_e) => {
-            println!("Apresentei um erro: {}", _e.to_string());
-        }
-    }
+    collection.update_one(
+        doc! { "_id" : ObjectId::with_string(&tweet_id).unwrap() }, 
+        doc! { "$addToSet" => {"likes" : bson::Bson::ObjectId(ObjectId::with_string(&user_id).unwrap()) }},
+        None).ok().expect("Failed to execute update.");
 
     true
 
