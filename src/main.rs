@@ -24,7 +24,8 @@ fn main() {
         controllers::user::get, controllers::user::getAll, controllers::user::insert,
         controllers::user::follow,
         controllers::tweet::get, controllers::tweet::getAll, controllers::tweet::insert,
-        controllers::tweet::getAllFromUser, controllers::tweet::like, controllers::tweet::getAllFromUsersFollowing
+        controllers::tweet::getAllFromUser, controllers::tweet::like, controllers::tweet::getAllFromUsersFollowing,
+        controllers::tweet::retweet
     ])
     .register(catchers![controllers::not_found::lookup])
     .launch();

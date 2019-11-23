@@ -6,6 +6,9 @@ use mongodb::ThreadedClient;
 use mongodb::db::ThreadedDatabase;
 use mongodb::{doc, error::Error};
 use mongodb;
+use chrono::{DateTime, Utc};
+use rocket_contrib::json::Json;
+extern crate serde_json;
 
 use crate::lib;
 use crate::meta;
@@ -17,11 +20,44 @@ pub struct Model {
   pub date_created: String
 }
 
+#[derive(Debug)]
+pub struct RetweetModel {
+  pub text: String,
+  pub user_id: String,
+  pub date_created: String,
+  pub retweet_from: String
+}
+
+impl RetweetModel {
+    pub fn to_bson(&self) -> bson::ordered::OrderedDocument {
+      
+        doc! { 
+          "text": self.text.to_owned(),
+          "user_id": ObjectId::with_string(&self.user_id).unwrap().to_owned(),
+          "date_created": self.date_created.to_owned(),
+          "retweet_from": ObjectId::with_string(&self.retweet_from).unwrap().to_owned()
+        }
+      }
+      
+      pub fn insert(&self) -> Result<Option<bson::ordered::OrderedDocument>, Error> {
+          let client = lib::mongo::establish_connection();
+          let collection = client.db("twitter").collection("tweet");
+  
+          let r = collection.insert_one(self.to_bson().clone(), None).ok().expect("Failed to execute find.");
+          
+          let result = collection.find_one(Some(doc! { "_id" => r.inserted_id.unwrap() }), None)
+          .ok().expect("Failed to execute find.");
+  
+          Ok(result)
+  
+      }
+}
+
 impl Model {
     pub fn to_bson(&self) -> bson::ordered::OrderedDocument {
       
       doc! { 
-        "email": self.text.to_owned(),
+        "text": self.text.to_owned(),
         "user_id": ObjectId::with_string(&self.user_id).unwrap().to_owned(),
         "date_created": self.date_created.to_owned()
       }
@@ -126,4 +162,35 @@ pub fn like(tweet_id: String, user_id: String) -> bool {
 
     true
 
+}
+
+pub fn retweet(tweet_id: String, user_id: String) -> Result<Option<bson::ordered::OrderedDocument>, Error> {
+    let client = lib::mongo::establish_connection();
+    let collection = client.db("twitter").collection("tweet");
+    let id = ObjectId::with_string(&tweet_id).unwrap();
+
+    let result = collection.find_one(Some(doc! { "_id" : id }), None)
+        .ok().expect("Failed to execute find.").unwrap();
+
+    match bson::from_bson::<meta::tweet::PostResponse>(bson::Bson::Document(result)) {
+        Ok(t) => {
+            
+            println!("Deu certo a formatação");
+            println!("{}", t.text.to_string());
+            let hoje: DateTime<Utc> = Utc::now();  
+            let mut model = RetweetModel {
+                text: t.text.to_owned().to_string(),
+                user_id: ObjectId::with_string(&user_id).unwrap().to_owned().to_string(),
+                retweet_from: ObjectId::with_string(&tweet_id).unwrap().to_owned().to_string(),
+                date_created: hoje.to_owned().to_string()
+            };
+            
+            let return_result = model.insert().unwrap();
+            Ok(return_result)
+        },
+        Err(_e) => {
+            println!("{}", _e.to_string());
+            Ok(None)
+        }
+    }
 }

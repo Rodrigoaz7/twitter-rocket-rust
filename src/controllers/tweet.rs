@@ -106,61 +106,81 @@ pub fn getAllFromUsersFollowing(user_id: String) -> JsonValue {
     
 }
 
+// Cria um novo tweet
 #[post("/tweet", format = "application/json", data = "<tweet>")]
 pub fn insert(tweet: Json<meta::tweet::Post>) -> JsonValue {
 
-  let user = models::User::find_one(tweet.user_id.to_owned()).unwrap();
-  let result_user = bson::from_bson::<meta::user::GetResponse>(bson::Bson::Document(user.unwrap()));
+    let hoje: DateTime<Utc> = Utc::now();  
+    let model = models::Tweet::Model {
+        text: tweet.text.to_owned(),
+        user_id: tweet.user_id.to_owned(),
+        date_created: hoje.to_owned().to_string()
+    };
 
-  match result_user {
-    Ok(u) => {
-
-        let hoje: DateTime<Utc> = Utc::now();  
-        let model = models::Tweet::Model {
-            text: tweet.text.to_owned(),
-            user_id: u._id.to_owned().to_string(),
-            date_created: hoje.to_owned().to_string()
-        };
-
-        match model.insert() {
-            Ok(tweet) => {
-                json!({
-                    "code": 201,
-                    "success": true,
-                    "data": tweet,
-                    "error": ""
-                })
-            },
-            Err (_e) => {
-                json!({
-                    "code": 412,
-                    "success": false,
-                    "data": {},
-                    "error": _e.to_string()
-                })
-            }
+    match model.insert() {
+        Ok(tweet) => {
+            json!({
+                "code": 201,
+                "success": true,
+                "data": tweet,
+                "error": ""
+            })
+        },
+        Err (_e) => {
+            json!({
+                "code": 412,
+                "success": false,
+                "data": {},
+                "error": _e.to_string()
+            })
         }
-    }
-    Err (_e) => {
-        json!({
-            "code": 412,
-            "success": false,
-            "data": {},
-            "error": "Usuário não existe"
-        })
     }
   }
 
-}
-
+// Dar like em um tweet
 #[put("/tweet/like", format = "application/json", data = "<tweet>")]
 pub fn like(tweet: Json<meta::tweet::PostLike>) -> JsonValue {
   let result = models::Tweet::like(tweet.tweet_id.to_owned(), tweet.user_id.to_owned());
 
-  json!({
-    "code": 200,
-    "success": true,
+  if result {
+    return json!({
+      "code": 200,
+      "success": true,
+      "data": {},
+      "error": ""
+    })
+  }
+
+  return json!({
+    "code": 400,
+    "success": false,
     "data": {},
-    "error": ""
+    "error": "Erro ao dar o like"
   })
+  
+}
+
+// Retweetar um tweet
+#[post("/tweet/retweet", format = "application/json", data = "<tweet>")]
+pub fn retweet(tweet: Json<meta::tweet::PostLike>) -> JsonValue {
+
+  match models::Tweet::retweet(tweet.tweet_id.to_owned(), tweet.user_id.to_owned()) {
+    Ok(ret) => {
+      json!({
+        "code": 200,
+        "success": true,
+        "data": ret,
+        "error": ""
+        })
+    },
+    Err(_e) => {
+      json!({
+        "code": 400,
+        "success": false,
+        "data": {},
+        "error": _e.to_string()
+      })
+    }
+  }
+  
 }
