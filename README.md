@@ -10,5 +10,5 @@ Mini API do twitter utiliando a linguagem Rust e o framework Rocket
 ## Compilar
 - cargo build
 
-# Rodar
+## Compilar e executar projeto
 - cargo run
