@@ -7,16 +7,15 @@
 
 extern crate chrono;
 
-use rocket::Request;
-
 mod lib;
 mod meta;
 mod models;
 mod controllers;
+mod utils;
 
 #[get("/")]
 fn index() -> &'static str {
-    "Hello, beautiful people 123!"
+    "Hello, this is a API!"
 }
 
 fn main() {

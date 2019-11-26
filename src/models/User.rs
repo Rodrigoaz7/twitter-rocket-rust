@@ -1,5 +1,3 @@
-use std;
-use std::io;
 use bson;
 use bson::oid::ObjectId;
 use mongodb::ThreadedClient;

@@ -1,5 +1,3 @@
-use std;
-use std::io;
 use bson;
 use bson::oid::ObjectId;
 use mongodb::ThreadedClient;
@@ -7,7 +5,6 @@ use mongodb::db::ThreadedDatabase;
 use mongodb::{doc, error::Error};
 use mongodb;
 use chrono::{DateTime, Utc};
-use rocket_contrib::json::Json;
 extern crate serde_json;
 
 use crate::lib;
@@ -178,7 +175,7 @@ pub fn retweet(tweet_id: String, user_id: String) -> Result<Option<bson::ordered
             println!("Deu certo a formatação");
             println!("{}", t.text.to_string());
             let hoje: DateTime<Utc> = Utc::now();  
-            let mut model = RetweetModel {
+            let model = RetweetModel {
                 text: t.text.to_owned().to_string(),
                 user_id: ObjectId::with_string(&user_id).unwrap().to_owned().to_string(),
                 retweet_from: ObjectId::with_string(&tweet_id).unwrap().to_owned().to_string(),
