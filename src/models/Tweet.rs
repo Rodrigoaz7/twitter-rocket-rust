@@ -171,9 +171,7 @@ pub fn retweet(tweet_id: String, user_id: String) -> Result<Option<bson::ordered
 
     match bson::from_bson::<meta::tweet::PostResponse>(bson::Bson::Document(result)) {
         Ok(t) => {
-            
-            println!("Deu certo a formatação");
-            println!("{}", t.text.to_string());
+
             let hoje: DateTime<Utc> = Utc::now();  
             let model = RetweetModel {
                 text: t.text.to_owned().to_string(),
@@ -186,7 +184,6 @@ pub fn retweet(tweet_id: String, user_id: String) -> Result<Option<bson::ordered
             Ok(return_result)
         },
         Err(_e) => {
-            println!("{}", _e.to_string());
             Ok(None)
         }
     }

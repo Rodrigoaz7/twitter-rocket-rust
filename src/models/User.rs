@@ -24,9 +24,7 @@ impl Model {
         let client = lib::mongo::establish_connection();
         let collection = client.db("twitter").collection("usuario");
 
-        println!("Name: {}", self.name);
         collection.insert_one(self.to_bson().clone(), None).ok().expect("Failed to execute find.");
-        println!("inserido com sucesso");
         
         let result = collection.find_one(Some(self.to_bson().clone()), None)
         .ok().expect("Failed to execute find.");
